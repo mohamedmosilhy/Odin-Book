@@ -451,13 +451,13 @@ Conceptually:
 
 Current User
 → Own Posts
-+
-Followed Users
-→ Visibility Rules
-→ Ordered Posts
-→ Feed
 
----
+- Followed Users
+  → Visibility Rules
+  → Ordered Posts
+  → Feed
+
+  ***
 
 ## 16. MVP Scope
 
@@ -672,7 +672,7 @@ Security implementation will be designed in later phases rather than prematurely
 
 ---
 
-## 22. Non-Functional Requirements
+## 22. Architectural Characteristics
 
 ### Security
 
@@ -779,27 +779,27 @@ From an engineering perspective, the project should demonstrate:
 
 ## 25. Technology Decision Summary
 
-| Area | Decision |
-|---|---|
-| Frontend | Next.js |
-| Backend | NestJS / Node.js |
-| Database | PostgreSQL |
-| ORM | Prisma |
-| Authentication | Email/password + Google OAuth |
-| Login identifier | Email |
-| Public identity | Username |
-| Profile visibility | Public / Private |
-| Social relationship | Following |
-| Private profile relationship | Follow request |
-| Posts | Create / Read / Edit / Delete |
-| Comments | Yes |
-| Likes | Yes |
-| Feed | Own + followed users |
-| Images | Planned extension |
-| Guest access | Planned extension |
-| Real-time | Out of scope |
-| Chat | Out of scope |
-| Mobile app | Out of scope |
+| Area                         | Decision                      |
+| ---------------------------- | ----------------------------- |
+| Frontend                     | Next.js                       |
+| Backend                      | NestJS / Node.js              |
+| Database                     | PostgreSQL                    |
+| ORM                          | Prisma                        |
+| Authentication               | Email/password + Google OAuth |
+| Login identifier             | Email                         |
+| Public identity              | Username                      |
+| Profile visibility           | Public / Private              |
+| Social relationship          | Following                     |
+| Private profile relationship | Follow request                |
+| Posts                        | Create / Read / Edit / Delete |
+| Comments                     | Yes                           |
+| Likes                        | Yes                           |
+| Feed                         | Own + followed users          |
+| Images                       | Planned extension             |
+| Guest access                 | Planned extension             |
+| Real-time                    | Out of scope                  |
+| Chat                         | Out of scope                  |
+| Mobile app                   | Out of scope                  |
 
 ---
 
