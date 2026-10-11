@@ -13,7 +13,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "oxlint src/ test/",
+    "lint": "oxlint --config oxlint.json src/ test/",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
@@ -57,7 +57,6 @@
     "tsx": "^4.23.15",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.71.1",
-    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.1.2"
   },
   "overrides": {

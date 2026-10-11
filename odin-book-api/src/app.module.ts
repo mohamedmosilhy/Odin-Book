@@ -1,5 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from '@auth/auth.module.js';
+import { ContentModule } from '@content/content.module.js';
+import { FeedModule } from '@feed/feed.module.js';
+import { ProfilesModule } from '@profiles/profiles.module.js';
+import { SharedModule } from '@shared/shared.module.js';
+import { SocialModule } from '@social/social.module.js';
+import { StorageModule } from '@storage/storage.module.js';
+import { UsersModule } from '@users/users.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { corsConfig } from './config/cors.config.js';
@@ -25,6 +33,14 @@ import { throttlerConfig } from './config/throttler.config.js';
         throttlerConfig,
       ],
     }),
+    UsersModule,
+    AuthModule,
+    ProfilesModule,
+    ContentModule,
+    FeedModule,
+    SocialModule,
+    StorageModule,
+    SharedModule,
   ],
   controllers: [AppController],
   providers: [AppService],

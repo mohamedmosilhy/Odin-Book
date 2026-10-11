@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-import { FollowStatus, PrismaClient, ProfileVisibility } from '../generated/prisma/client.js';
+import { FollowStatus, PrismaClient, ProfileVisibility } from '../src/generated/prisma/client.js';
 
 const databaseUrl = process.env.DATABASE_URL;
 
