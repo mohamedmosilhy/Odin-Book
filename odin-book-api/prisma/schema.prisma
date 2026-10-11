@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProfileVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum FollowStatus {
+  PENDING
+  ACTIVE
+}
+
+enum AuthProvider {
+  GOOGLE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile                Profile?
+  externalIdentities     ExternalIdentity[]
+  posts                  Post[]
+  comments               Comment[]
+  likes                  Like[]
+  sentFollowRequests     FollowRelationship[] @relation("Requester")
+  receivedFollowRequests FollowRelationship[] @relation("Target")
+  feedItems              FeedItem[]
+  refreshTokens          RefreshToken[]
+}
+
+model Profile {
+  id             String            @id @default(cuid())
+  userId         String            @unique
+  username       String            @unique
+  displayName    String
+  bio            String?
+  profilePicture String?
+  visibility     ProfileVisibility @default(PUBLIC)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ExternalIdentity {
+  id             String       @id @default(cuid())
+  userId         String
+  provider       AuthProvider
+  providerUserId String
+  createdAt      DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+}
+
+model FollowRelationship {
+  id          String       @id @default(cuid())
+  requesterId String
+  targetId    String
+  status      FollowStatus
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  requester User @relation("Requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  target    User @relation("Target", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, targetId])
+  @@index([targetId, status])
+  @@index([requesterId, status])
+}
+
+model Post {
+  id        String    @id @default(cuid())
+  authorId  String
+  content   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  author    User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  images    PostImage[]
+  comments  Comment[]
+  likes     Like[]
+  feedItems FeedItem[]
+
+  @@index([authorId, createdAt])
+  @@index([deletedAt])
+}
+
+model PostImage {
+  id        String   @id @default(cuid())
+  postId    String
+  url       String
+  position  Int?
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  authorId  String
+  postId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+  @@index([authorId])
+}
+
+model Like {
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@index([postId])
+}
+
+model FeedItem {
+  id        String   @id @default(cuid())
+  ownerId   String // whose feed this row belongs to
+  postId    String
+  authorId  String // denormalized — avoids a join just to filter/display
+  createdAt DateTime // copied from Post.createdAt at fan-out time; drives ordering
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  post  Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, postId])
+  @@index([ownerId, createdAt])
+}
+
+model RefreshToken {
+  id                  String    @id @default(cuid())
+  userId              String
+  tokenHash           String    @unique // SHA-256 hash of the raw token — never the raw value
+  familyId            String // groups a chain of rotations
+  expiresAt           DateTime
+  revokedAt           DateTime?
+  replacedByTokenHash String? // set when rotated forward
+  createdAt           DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+}
