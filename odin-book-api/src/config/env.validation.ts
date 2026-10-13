@@ -20,6 +20,9 @@ export const envSchema = z.object({
     )
     .default('15m'),
   JWT_REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).default(30),
+  ARGON2_MEMORY_COST: z.coerce.number().int().min(19456).default(19456),
+  ARGON2_TIME_COST: z.coerce.number().int().min(2).default(2),
+  ARGON2_PARALLELISM: z.coerce.number().int().min(1).default(1),
 
   GOOGLE_CLIENT_ID: z.string().trim().min(1, 'GOOGLE_CLIENT_ID is required'),
   GOOGLE_CLIENT_SECRET: z.string().trim().min(1, 'GOOGLE_CLIENT_SECRET is required'),

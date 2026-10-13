@@ -17,6 +17,7 @@ import { googleOauthConfig } from './config/google-oauth.config.js';
 import { jwtConfig } from './config/jwt.config.js';
 import { storageConfig } from './config/storage.config.js';
 import { throttlerConfig } from './config/throttler.config.js';
+import { passwordHashingConfig } from './config/password-hashing.config.js';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { throttlerConfig } from './config/throttler.config.js';
         storageConfig,
         corsConfig,
         throttlerConfig,
+        passwordHashingConfig,
       ],
     }),
     UsersModule,

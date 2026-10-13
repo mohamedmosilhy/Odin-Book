@@ -14,6 +14,6 @@ import { SharedModule } from '@shared/shared.module.js';
     { provide: USER_REPOSITORY, useClass: PrismaUserRepository },
   ],
   imports: [SharedModule],
-  exports: [FindUserByEmailUseCase, FindUserByIdUseCase],
+  exports: [FindUserByEmailUseCase, FindUserByIdUseCase, USER_REPOSITORY],
 })
 export class UsersModule {}
