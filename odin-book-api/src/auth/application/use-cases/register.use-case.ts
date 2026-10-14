@@ -30,11 +30,13 @@ export class RegisterUseCase {
 
   async execute(email: string, password: string): Promise<AuthenticationResult> {
     const existingUser = await this.userRepository.findByEmail(email);
+
     if (existingUser) {
       throw new EmailAlreadyRegisteredError();
     }
 
     const now = new Date();
+    
     const passwordHash = await this.passwordHasher.hash(password);
 
     const newUser = await this.userRepository.create({

@@ -8,8 +8,6 @@ import { SharedModule } from '@shared/shared.module.js';
 import { SocialModule } from '@social/social.module.js';
 import { StorageModule } from '@storage/storage.module.js';
 import { UsersModule } from '@users/users.module.js';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
 import { corsConfig } from './config/cors.config.js';
 import { databaseConfig } from './config/database.config.js';
 import { validateEnv } from './config/env.validation.js';
@@ -44,7 +42,5 @@ import { passwordHashingConfig } from './config/password-hashing.config.js';
     StorageModule,
     SharedModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}

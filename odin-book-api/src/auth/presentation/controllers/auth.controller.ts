@@ -71,9 +71,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async refresh(@Res({ passthrough: true }) response: Response, @Req() request: Request) {
     const refreshToken = request.cookies.refresh_token;
+
     if (!refreshToken || typeof refreshToken !== 'string') {
       throw new InvalidRefreshTokenError();
     }
+
     const result = await this.refreshUseCase.execute(refreshToken);
 
     response.cookie('refresh_token', result.refreshToken, {
@@ -92,9 +94,11 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     const refreshToken = request.cookies?.refresh_token;
+
     if (typeof refreshToken === 'string') {
       await this.logoutUseCase.execute(refreshToken);
     }
+    
     response.clearCookie('refresh_token', {
       httpOnly: true,
       secure: true,

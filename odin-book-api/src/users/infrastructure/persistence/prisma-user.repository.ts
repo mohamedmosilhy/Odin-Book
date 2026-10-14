@@ -12,6 +12,7 @@ import { EmailAlreadyRegisteredError } from '@users/domain/errors/email-already-
 @Injectable()
 export class PrismaUserRepository implements UserRepositoryPort {
   constructor(private prisma: PrismaService) {}
+
   async findById(id: string): Promise<User | null> {
     const user = await this.prisma.user.findUnique({
       where: { id },
@@ -21,6 +22,7 @@ export class PrismaUserRepository implements UserRepositoryPort {
     }
     return UserMapper.toDomain(user);
   }
+
   async findByEmail(email: string): Promise<User | null> {
     // Implementation for finding user by email
     const user = await this.prisma.user.findUnique({
@@ -31,6 +33,7 @@ export class PrismaUserRepository implements UserRepositoryPort {
     }
     return UserMapper.toDomain(user);
   }
+
   async create(user: CreateUserData): Promise<User> {
     try {
       const createdUser = await this.prisma.user.create({

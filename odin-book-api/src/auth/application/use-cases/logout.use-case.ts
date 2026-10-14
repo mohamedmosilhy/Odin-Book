@@ -14,7 +14,6 @@ export class LogoutUseCase {
     private readonly refreshTokenRepository: RefreshTokenRepositoryPort,
   ) {}
   async execute(rawRefreshToken: string): Promise<void> {
-    const now = new Date();
     const hashedToken = await this.refreshTokenService.hash(rawRefreshToken);
 
     const refreshToken = await this.refreshTokenRepository.findByTokenHash(hashedToken);
@@ -22,6 +21,7 @@ export class LogoutUseCase {
     if (!refreshToken) {
       return;
     }
+    const now = new Date();
 
     await this.refreshTokenRepository.revokeFamily(refreshToken.familyId, now);
   }

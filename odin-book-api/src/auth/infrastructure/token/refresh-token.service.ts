@@ -18,6 +18,7 @@ export class RefreshTokenService implements RefreshTokenServicePort {
   getExpirationDate(): Promise<Date> {
     const expirationTimeInSeconds =
       this.configService.getOrThrow<number>('jwt.refreshTokenTtlDays') * 24 * 60 * 60;
+
     return Promise.resolve(new Date(Date.now() + expirationTimeInSeconds * 1000));
   }
 }

@@ -29,14 +29,19 @@ export class LoginUseCase {
   ) {}
   async execute(email: string, password: string): Promise<AuthenticationResult> {
     const user = await this.userRepository.findByEmail(email);
+
     if (!user) {
       throw new InvalidCredentialsError();
     }
+
     const passwordHash = user.getPasswordHash();
+
     if (!passwordHash) {
       throw new InvalidCredentialsError();
     }
+
     const isPasswordValid = await this.passwordHasher.verify(password, passwordHash);
+    
     if (!isPasswordValid) {
       throw new InvalidCredentialsError();
     }
