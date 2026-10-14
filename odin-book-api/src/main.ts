@@ -4,6 +4,8 @@ import { AppModule } from './app.module.js';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { HttpExceptionFilter } from '@shared/filters/global-exception.filter.js';
+import cookieSession from 'cookie-session';
+import { createOAuthSessionConfig } from './config/oauth-session.config.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,6 +15,8 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.useGlobalFilters(new HttpExceptionFilter());
+
+  app.use(cookieSession(createOAuthSessionConfig(config)));
 
   app.enableCors({
     origin: frontendUrl,

@@ -24,6 +24,11 @@ export const envSchema = z.object({
   ARGON2_TIME_COST: z.coerce.number().int().min(2).default(2),
   ARGON2_PARALLELISM: z.coerce.number().int().min(1).default(1),
 
+  OAUTH_STATE_SECRET: z
+    .string()
+    .trim()
+    .min(32, 'OAUTH_STATE_SECRET must be at least 32 characters long'),
+
   GOOGLE_CLIENT_ID: z.string().trim().min(1, 'GOOGLE_CLIENT_ID is required'),
   GOOGLE_CLIENT_SECRET: z.string().trim().min(1, 'GOOGLE_CLIENT_SECRET is required'),
   GOOGLE_CALLBACK_URL: z.url(),

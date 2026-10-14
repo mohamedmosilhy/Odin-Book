@@ -4,4 +4,5 @@ export const googleOauthConfig = registerAs('googleOauth', () => ({
   clientId: process.env.GOOGLE_CLIENT_ID!,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
   callbackUrl: process.env.GOOGLE_CALLBACK_URL!,
+  stateSecret: process.env.OAUTH_STATE_SECRET!,
 }));

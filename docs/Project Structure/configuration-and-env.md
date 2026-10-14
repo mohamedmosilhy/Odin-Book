@@ -37,22 +37,23 @@ technically it could reach `process.env` directly.
 
 ## 3. Full Variable List
 
-| Variable | Owner config | Required | Notes |
-|---|---|---|---|
-| `NODE_ENV` | — (global) | Yes | `development` \| `test` \| `production` |
-| `PORT` | — (global) | No (default 3000) | |
-| `DATABASE_URL` | `database.config.ts` | Yes | Phase 4 |
-| `JWT_SECRET` | `jwt.config.ts` | Yes | High-entropy, Phase 6 SEC-02 |
-| `JWT_ACCESS_TOKEN_TTL` | `jwt.config.ts` | No (default `15m`) | Phase 6 |
-| `JWT_REFRESH_TOKEN_TTL_DAYS` | `jwt.config.ts` | No (default `30`) | Phase 6 |
-| `GOOGLE_CLIENT_ID` | `google-oauth.config.ts` | Yes | Phase 1 AUTH-03 |
-| `GOOGLE_CLIENT_SECRET` | `google-oauth.config.ts` | Yes | Never logged |
-| `GOOGLE_CALLBACK_URL` | `google-oauth.config.ts` | Yes | Must exactly match Google Console allowlist (Phase 6) |
-| `SUPABASE_URL` | `storage.config.ts` | Yes | Phase 3 AD-05 |
-| `SUPABASE_KEY` | `storage.config.ts` | Yes | Service-role key; never exposed client-side |
-| `FRONTEND_URL` | `cors.config.ts` | Yes | Single allowlisted CORS origin, Phase 6 |
-| `THROTTLE_AUTH_LIMIT` | `throttler.config.ts` | No (default `5`) | Phase 6 |
-| `THROTTLE_DEFAULT_LIMIT` | `throttler.config.ts` | No (default `100`) | Phase 6 |
+| Variable                     | Owner config             | Required           | Notes                                                 |
+| ---------------------------- | ------------------------ | ------------------ | ----------------------------------------------------- |
+| `NODE_ENV`                   | — (global)               | Yes                | `development` \| `test` \| `production`               |
+| `PORT`                       | — (global)               | No (default 3000)  |                                                       |
+| `DATABASE_URL`               | `database.config.ts`     | Yes                | Phase 4                                               |
+| `JWT_SECRET`                 | `jwt.config.ts`          | Yes                | High-entropy, Phase 6 SEC-02                          |
+| `JWT_ACCESS_TOKEN_TTL`       | `jwt.config.ts`          | No (default `15m`) | Phase 6                                               |
+| `JWT_REFRESH_TOKEN_TTL_DAYS` | `jwt.config.ts`          | No (default `30`)  | Phase 6                                               |
+| `GOOGLE_CLIENT_ID`           | `google-oauth.config.ts` | Yes                | Phase 1 AUTH-03                                       |
+| `GOOGLE_CLIENT_SECRET`       | `google-oauth.config.ts` | Yes                | Never logged                                          |
+| `GOOGLE_CALLBACK_URL`        | `google-oauth.config.ts` | Yes                | Must exactly match Google Console allowlist (Phase 6) |
+| `SUPABASE_URL`               | `storage.config.ts`      | Yes                | Phase 3 AD-05                                         |
+| `SUPABASE_KEY`               | `storage.config.ts`      | Yes                | Service-role key; never exposed client-side           |
+| `FRONTEND_URL`               | `cors.config.ts`         | Yes                | Single allowlisted CORS origin, Phase 6               |
+| `THROTTLE_AUTH_LIMIT`        | `throttler.config.ts`    | No (default `5`)   | Phase 6                                               |
+| `THROTTLE_DEFAULT_LIMIT`     | `throttler.config.ts`    | No (default `100`) | Phase 6                                               |
+| `OAUTH_STATE_SECRET`         | `google-oauth.config.ts` | Yes                | Phase 6                                               |
 
 ## 4. `.env.example`
 
@@ -75,6 +76,8 @@ GOOGLE_CALLBACK_URL=http://localhost:3000/api/v1/auth/google/callback
 
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your-supabase-service-role-key
+
+OAUTH_STATE_SECRET=replace-with-a-long-random-value
 
 FRONTEND_URL=http://localhost:5173
 
