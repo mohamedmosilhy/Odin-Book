@@ -15,11 +15,17 @@ import { PrismaRefreshTokenRepository } from './infrastructure/persistence/prism
 import { RefreshUseCase } from './application/use-cases/refresh.use-case.js';
 import { LogoutUseCase } from './application/use-cases/logout.use-case.js';
 import { AuthGuard } from '@shared/guards/auth.guard.js';
+import { GooglePassportGuard } from './presentation/guards/google-passport.guard.js';
+import { PassportModule } from '@nestjs/passport';
+import { GoogleStrategy } from './infrastructure/strategies/google.strategy.js';
+import { GoogleOAuthCallbackUseCase } from './application/use-cases/google-oauth-callback.use-case.js';
 
 @Module({
   controllers: [AuthController],
+
   imports: [
     UsersModule,
+    PassportModule.register({ session: false }),
     SharedModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -39,6 +45,9 @@ import { AuthGuard } from '@shared/guards/auth.guard.js';
     RefreshUseCase,
     LogoutUseCase,
     AuthGuard,
+    GoogleStrategy,
+    GooglePassportGuard,
+    GoogleOAuthCallbackUseCase,
     {
       provide: ACCESS_TOKEN,
       useClass: JwtAccessTokenService,

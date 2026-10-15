@@ -11,6 +11,10 @@ import { LogoutUseCase } from '@auth/application/use-cases/logout.use-case.js';
 
 import { Get, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@shared/guards/auth.guard.js';
+import { GooglePassportGuard } from '../guards/google-passport.guard.js';
+import { GoogleOAuthCallbackUseCase } from '@auth/application/use-cases/google-oauth-callback.use-case.js';
+import { type GoogleOAuthRequest } from '../types/google-oauth-request.js';
+import { ConfigService } from '@nestjs/config';
 
 type AuthenticatedRequest = Request & {
   user: { id: string };
@@ -23,6 +27,8 @@ export class AuthController {
     private readonly loginUseCase: LoginUseCase,
     private readonly refreshUseCase: RefreshUseCase,
     private readonly logoutUseCase: LogoutUseCase,
+    private readonly googleOAuthCallbackUseCase: GoogleOAuthCallbackUseCase,
+    private readonly configService: ConfigService,
   ) {}
 
   @Post('register')
@@ -98,7 +104,7 @@ export class AuthController {
     if (typeof refreshToken === 'string') {
       await this.logoutUseCase.execute(refreshToken);
     }
-    
+
     response.clearCookie('refresh_token', {
       httpOnly: true,
       secure: true,
@@ -111,5 +117,31 @@ export class AuthController {
   @UseGuards(AuthGuard)
   async protectedRoute(@Req() request: AuthenticatedRequest) {
     return { userId: request.user.id };
+  }
+
+  @Get('google')
+  @UseGuards(GooglePassportGuard)
+  async googleAuth() {}
+
+  @Get('google/callback')
+  @UseGuards(GooglePassportGuard)
+  async googleAuthCallback(@Req() request: GoogleOAuthRequest, @Res() response: Response) {
+    const result = await this.googleOAuthCallbackUseCase.execute(request.user);
+
+    response.cookie('refresh_token', result.refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/api/v1/auth',
+    });
+
+    const frontendUrl = this.configService
+      .getOrThrow<string>('cors.frontendUrl')
+      .replace(/\/+$/, '');
+
+    response.redirect(
+      302,
+      `${frontendUrl}/oauth/callback#accessToken=${encodeURIComponent(result.accessToken)}`,
+    );
   }
 }

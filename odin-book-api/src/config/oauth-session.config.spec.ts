@@ -29,7 +29,7 @@ describe('OAuth session configuration', () => {
     const options = createOAuthSessionConfig(config);
 
     expect(config.getOrThrow).toHaveBeenCalledWith('googleOauth.stateSecret');
-    expect(options.keys).toEqual([STATE_SECRET]);
+    expect(options?.keys).toEqual([STATE_SECRET]);
   });
 
   it('uses a ten-minute HTTP-only Lax cookie limited to Google auth routes', () => {
@@ -51,6 +51,6 @@ describe('OAuth session configuration', () => {
   ] as const)('sets secure correctly in the %s environment', (nodeEnv, expectedSecure) => {
     const options = createOAuthSessionConfig(createConfigService(nodeEnv));
 
-    expect(options.secure).toBe(expectedSecure);
+    expect(options?.secure).toBe(expectedSecure);
   });
 });

@@ -41,7 +41,7 @@ export class LoginUseCase {
     }
 
     const isPasswordValid = await this.passwordHasher.verify(password, passwordHash);
-    
+
     if (!isPasswordValid) {
       throw new InvalidCredentialsError();
     }

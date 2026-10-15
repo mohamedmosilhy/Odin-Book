@@ -3,11 +3,16 @@ import type { LoginUseCase } from '@auth/application/use-cases/login.use-case.js
 import type { LogoutUseCase } from '@auth/application/use-cases/logout.use-case.js';
 import type { RefreshUseCase } from '@auth/application/use-cases/refresh.use-case.js';
 import type { RegisterUseCase } from '@auth/application/use-cases/register.use-case.js';
+import type { GoogleOAuthCallbackUseCase } from '@auth/application/use-cases/google-oauth-callback.use-case.js';
+import type { GoogleProfile } from '@auth/application/types/google-profile.js';
 import { InvalidRefreshTokenError } from '@auth/domain/errors/invalid-refresh-token.error.js';
 import { HttpStatus } from '@nestjs/common';
 import { GUARDS_METADATA, HTTP_CODE_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import type { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@shared/guards/auth.guard.js';
 import type { Request, Response } from 'express';
+import { GooglePassportGuard } from '../guards/google-passport.guard.js';
+import type { GoogleOAuthRequest } from '../types/google-oauth-request.js';
 import { AuthController } from './auth.controller.js';
 
 describe('AuthController', () => {
@@ -33,14 +38,26 @@ describe('AuthController', () => {
     const logoutUseCase = {
       execute: vi.fn<LogoutUseCase['execute']>(),
     };
+    const googleOAuthCallbackUseCase = {
+      execute: vi.fn<GoogleOAuthCallbackUseCase['execute']>(),
+    };
+    const configService = {
+      getOrThrow: vi.fn().mockReturnValue('http://localhost:5173/'),
+    };
     const cookie = vi.fn();
     const clearCookie = vi.fn();
-    const response = { cookie, clearCookie } as unknown as Response;
+    const redirect = vi.fn();
+    const send = vi.fn();
+    const status = vi.fn();
+    const response = { cookie, clearCookie, redirect, send, status } as unknown as Response;
+    status.mockReturnValue(response);
     const controller = new AuthController(
       registerUseCase as unknown as RegisterUseCase,
       loginUseCase as unknown as LoginUseCase,
       refreshUseCase as unknown as RefreshUseCase,
       logoutUseCase as unknown as LogoutUseCase,
+      googleOAuthCallbackUseCase as unknown as GoogleOAuthCallbackUseCase,
+      configService as unknown as ConfigService,
     );
 
     return {
@@ -49,9 +66,14 @@ describe('AuthController', () => {
       loginUseCase,
       refreshUseCase,
       logoutUseCase,
+      googleOAuthCallbackUseCase,
+      configService,
       cookie,
       clearCookie,
+      redirect,
       response,
+      send,
+      status,
     };
   }
 
@@ -72,6 +94,76 @@ describe('AuthController', () => {
     accessToken: authenticationResult.accessToken,
     user: authenticationResult.user,
   };
+
+  it('starts Google sign-in through the Google Passport guard', async () => {
+    const { controller } = createController();
+
+    const result = await controller.googleAuth();
+    const guards = Reflect.getMetadata(
+      GUARDS_METADATA,
+      AuthController.prototype.googleAuth,
+    ) as unknown[];
+
+    expect(Reflect.getMetadata(PATH_METADATA, AuthController.prototype.googleAuth)).toBe('google');
+    expect(guards).toContain(GooglePassportGuard);
+    expect(result).toBeUndefined();
+  });
+
+  it('hands the trusted Google identity to the use case and redirects with only the Odin access token in the fragment', async () => {
+    const {
+      configService,
+      controller,
+      cookie,
+      googleOAuthCallbackUseCase,
+      redirect,
+      response,
+      send,
+      status,
+    } = createController();
+    const googleProfile: GoogleProfile = {
+      provider: 'GOOGLE',
+      providerUserId: 'google-user-123',
+      email: 'person@example.com',
+      emailVerified: true,
+      displayName: 'Person Example',
+      picture: null,
+    };
+    const callbackResult: AuthenticationResult = {
+      ...authenticationResult,
+      accessToken: 'odin access/token?value=1#private',
+    };
+    const request = { user: googleProfile } as GoogleOAuthRequest;
+    googleOAuthCallbackUseCase.execute.mockResolvedValue(callbackResult);
+
+    const result = await controller.googleAuthCallback(request, response);
+
+    expect(Reflect.getMetadata(PATH_METADATA, AuthController.prototype.googleAuthCallback)).toBe(
+      'google/callback',
+    );
+    expect(
+      Reflect.getMetadata(GUARDS_METADATA, AuthController.prototype.googleAuthCallback),
+    ).toContain(GooglePassportGuard);
+    expect(googleOAuthCallbackUseCase.execute).toHaveBeenCalledWith(googleProfile);
+    expect(cookie).toHaveBeenCalledWith(
+      'refresh_token',
+      callbackResult.refreshToken,
+      expect.objectContaining({
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        path: '/api/v1/auth',
+      }),
+    );
+    expect(configService.getOrThrow).toHaveBeenCalledWith('cors.frontendUrl');
+    expect(redirect).toHaveBeenCalledOnce();
+    expect(redirect).toHaveBeenCalledWith(
+      HttpStatus.FOUND,
+      `http://localhost:5173/oauth/callback#accessToken=${encodeURIComponent(callbackResult.accessToken)}`,
+    );
+    expect(status).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+    expect(result).toBeUndefined();
+  });
 
   it('registers a user, sets the refresh cookie, and omits it from the response body', async () => {
     const { controller, registerUseCase, cookie, response } = createController();
@@ -150,9 +242,9 @@ describe('AuthController', () => {
       }),
     );
     expect(result).toBeUndefined();
-    expect(
-      Reflect.getMetadata(HTTP_CODE_METADATA, AuthController.prototype.logout),
-    ).toBe(HttpStatus.NO_CONTENT);
+    expect(Reflect.getMetadata(HTTP_CODE_METADATA, AuthController.prototype.logout)).toBe(
+      HttpStatus.NO_CONTENT,
+    );
   });
 
   it('still clears the cookie and succeeds when no refresh cookie is present', async () => {
