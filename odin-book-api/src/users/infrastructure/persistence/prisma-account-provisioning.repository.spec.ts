@@ -1,6 +1,7 @@
 import type { PrismaService } from '@shared/infrastructure/database/prisma.service.js';
 import { Prisma } from '../../../generated/prisma/client.js';
 import { UsernameAlreadyTakenError } from '../../domain/errors/username-already-taken.error.js';
+import { EmailAlreadyRegisteredError } from '../../domain/errors/email-already-registered.error.js';
 import { PrismaAccountProvisioningRepository } from './prisma-account-provisioning.repository.js';
 
 describe('PrismaAccountProvisioningRepository', () => {
@@ -12,6 +13,13 @@ describe('PrismaAccountProvisioningRepository', () => {
     profilePicture: 'https://images.example.com/jane.jpg',
     provider: 'GOOGLE' as const,
     providerUserId: 'google-user-123',
+  };
+  const localInput = {
+    email: 'jane@example.com',
+    passwordHash: 'hashed-password',
+    username: 'jane',
+    displayName: 'jane',
+    profilePicture: null,
   };
 
   const persistedUser = {
@@ -81,6 +89,40 @@ describe('PrismaAccountProvisioningRepository', () => {
     );
   });
 
+  it('atomically creates a password user and profile without an external identity', async () => {
+    const { createExternalIdentity, createProfile, createUser, repository, transaction } =
+      createRepository();
+
+    const user = await repository.createAccount(localInput as never);
+
+    expect(transaction).toHaveBeenCalledOnce();
+    expect(createUser).toHaveBeenCalledWith({
+      data: {
+        email: localInput.email,
+        passwordHash: localInput.passwordHash,
+      },
+    });
+    expect(createProfile).toHaveBeenCalledWith({
+      data: {
+        userId: persistedUser.id,
+        username: localInput.username,
+        displayName: localInput.displayName,
+        profilePicture: null,
+      },
+    });
+    expect(createExternalIdentity).not.toHaveBeenCalled();
+    expect(user).toEqual(expect.objectContaining({ id: persistedUser.id }));
+  });
+
+  it('surfaces a profile-creation failure from the atomic transaction', async () => {
+    const { createProfile, repository } = createRepository();
+    createProfile.mockRejectedValue(new Error('Profile insert failed'));
+
+    await expect(repository.createAccount(localInput as never)).rejects.toThrow(
+      'Profile insert failed',
+    );
+  });
+
   it('translates a username uniqueness failure without leaking Prisma', async () => {
     const { repository, transaction } = createRepository();
     transaction.mockRejectedValue(
@@ -104,7 +146,7 @@ describe('PrismaAccountProvisioningRepository', () => {
     });
   });
 
-  it('does not misclassify another uniqueness failure as a username conflict', async () => {
+  it('translates an email uniqueness race without leaking Prisma', async () => {
     const { repository, transaction } = createRepository();
     const emailConflict = new Prisma.PrismaClientKnownRequestError(
       'Unique constraint failed on email',
@@ -116,6 +158,23 @@ describe('PrismaAccountProvisioningRepository', () => {
     );
     transaction.mockRejectedValue(emailConflict);
 
-    await expect(repository.createAccount(input)).rejects.toBe(emailConflict);
+    await expect(repository.createAccount(localInput)).rejects.toBeInstanceOf(
+      EmailAlreadyRegisteredError,
+    );
+  });
+
+  it('does not misclassify an unrelated uniqueness failure', async () => {
+    const { repository, transaction } = createRepository();
+    const providerConflict = new Prisma.PrismaClientKnownRequestError(
+      'Unique constraint failed on provider identity',
+      {
+        code: 'P2002',
+        clientVersion: '7.10.0',
+        meta: { target: ['provider', 'providerUserId'] },
+      },
+    );
+    transaction.mockRejectedValue(providerConflict);
+
+    await expect(repository.createAccount(input)).rejects.toBe(providerConflict);
   });
 });

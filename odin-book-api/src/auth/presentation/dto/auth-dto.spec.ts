@@ -51,9 +51,7 @@ describe('RegisterDto', () => {
       password: '12345678',
     });
 
-    expect(constraintsFor(await validate(shortPassword), 'password')).toHaveProperty(
-      'minLength',
-    );
+    expect(constraintsFor(await validate(shortPassword), 'password')).toHaveProperty('minLength');
     expect(constraintsFor(await validate(missingNumber), 'password')).toHaveProperty('matches');
     expect(constraintsFor(await validate(missingLetter), 'password')).toHaveProperty('matches');
   });

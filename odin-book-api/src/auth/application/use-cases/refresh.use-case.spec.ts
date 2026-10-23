@@ -205,9 +205,7 @@ describe('RefreshUseCase', () => {
       ),
     );
 
-    await expect(useCase.execute(rawCurrentToken)).rejects.toBeInstanceOf(
-      InvalidRefreshTokenError,
-    );
+    await expect(useCase.execute(rawCurrentToken)).rejects.toBeInstanceOf(InvalidRefreshTokenError);
 
     expect(refreshTokenService.generate).not.toHaveBeenCalled();
     expect(accessTokenPort.generate).not.toHaveBeenCalled();
@@ -229,9 +227,7 @@ describe('RefreshUseCase', () => {
       ),
     );
 
-    await expect(useCase.execute(rawCurrentToken)).rejects.toBeInstanceOf(
-      InvalidRefreshTokenError,
-    );
+    await expect(useCase.execute(rawCurrentToken)).rejects.toBeInstanceOf(InvalidRefreshTokenError);
 
     expect(repository.rotateInputs).toHaveLength(0);
     expect(repository.revokeFamilyInputs).toHaveLength(0);
@@ -262,9 +258,7 @@ describe('RefreshUseCase', () => {
       ),
     );
 
-    await expect(useCase.execute(rawCurrentToken)).rejects.toBeInstanceOf(
-      InvalidRefreshTokenError,
-    );
+    await expect(useCase.execute(rawCurrentToken)).rejects.toBeInstanceOf(InvalidRefreshTokenError);
 
     expect(repository.revokeFamilyInputs).toEqual([{ familyId: 'family-id', revokedAt: now }]);
     expect(repository.findStored(replacementTokenHash)?.revokedAt).toEqual(now);
@@ -296,13 +290,9 @@ describe('RefreshUseCase', () => {
         null,
       ),
     );
-    vi.spyOn(repository, 'rotate').mockRejectedValue(
-      new RefreshTokenRotationConflictError(),
-    );
+    vi.spyOn(repository, 'rotate').mockRejectedValue(new RefreshTokenRotationConflictError());
 
-    await expect(useCase.execute(rawCurrentToken)).rejects.toBeInstanceOf(
-      InvalidRefreshTokenError,
-    );
+    await expect(useCase.execute(rawCurrentToken)).rejects.toBeInstanceOf(InvalidRefreshTokenError);
 
     expect(repository.revokeFamilyInputs).toEqual([{ familyId: 'family-id', revokedAt: now }]);
     expect(repository.findStored('concurrent-replacement-hash')?.revokedAt).toEqual(now);

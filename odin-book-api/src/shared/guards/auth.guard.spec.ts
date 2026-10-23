@@ -45,9 +45,9 @@ describe('AuthGuard', () => {
   it('rejects a request with no authorization header', async () => {
     const guard = new AuthGuard(accessTokenPort);
 
-    await expect(
-      guard.canActivate(createContext({ headers: {} })),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(guard.canActivate(createContext({ headers: {} }))).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
     expect(accessTokenPort.verify).not.toHaveBeenCalled();
   });
 
