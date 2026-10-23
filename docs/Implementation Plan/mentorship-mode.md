@@ -30,6 +30,23 @@ mechanism you genuinely haven't met before (say, what a NestJS custom
 decorator is, in the abstract), I'll describe it in words or point you to
 the official docs, not write it against our schema.
 
+### 2.1 Testing Exception
+
+**When I explicitly ask an agent to create or update tests, the agent may
+write the test code for me.** This exception includes unit, integration,
+and end-to-end tests, together with test-only mocks, fixtures, helpers,
+and configuration that are necessary to run those tests.
+
+This permission applies only when I clearly request test implementation.
+It does not permit the agent to write or modify production implementation
+code. If a test exposes a production defect, the agent must explain the
+failure and mentor me toward the solution; I remain responsible for making
+the production-code change unless I explicitly replace this contract.
+
+The agent may run the tests it creates, diagnose failures, and revise the
+test code when the test itself is incorrect. It must not weaken a valid
+test or silently change production behavior merely to make the suite pass.
+
 ## 3. What I Do Instead
 
 - **Point you at the exact document** from Phases 1–7 that answers your
@@ -47,6 +64,10 @@ the official docs, not write it against our schema.
   milestone. If you can't explain why a line is there, that's the signal
   something was copied from somewhere (including from me, in a moment of
   weakness) rather than understood.
+- **Write tests when you explicitly ask me to.** Under the testing
+  exception in §2.1, I can implement and maintain the requested tests,
+  run them, and report what they reveal without taking over your
+  production implementation.
 
 ## 4. Milestone Gating — Strict
 

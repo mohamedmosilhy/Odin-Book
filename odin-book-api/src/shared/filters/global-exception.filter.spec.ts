@@ -7,6 +7,7 @@ import {
   type ArgumentsHost,
 } from '@nestjs/common';
 import { EmailAlreadyRegisteredError } from '@users/domain/errors/email-already-registered.error.js';
+import { ProfileNotFoundError } from '@profiles/domain/errors/profile-not-found.error.js';
 import { HttpExceptionFilter } from './global-exception.filter.js';
 
 describe('HttpExceptionFilter', () => {
@@ -40,6 +41,12 @@ describe('HttpExceptionFilter', () => {
       statusCode: HttpStatus.CONFLICT,
       code: 'EMAIL_ALREADY_REGISTERED',
       message: 'An account with this email already exists.',
+    },
+    {
+      exception: new ProfileNotFoundError('Profile not found'),
+      statusCode: HttpStatus.NOT_FOUND,
+      code: 'PROFILE_NOT_FOUND',
+      message: 'Profile not found',
     },
   ])('maps $code to the uniform error envelope', ({ exception, statusCode, code, message }) => {
     const { host, status, json } = createHttpHost();

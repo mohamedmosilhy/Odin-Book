@@ -48,7 +48,7 @@ export class PrismaRefreshTokenRepository implements RefreshTokenRepositoryPort 
       if (!existingToken) {
         throw new RefreshTokenRotationConflictError();
       }
-      
+
       const rows = await tx.refreshToken.updateMany({
         data: {
           revokedAt: data.rotatedAt,

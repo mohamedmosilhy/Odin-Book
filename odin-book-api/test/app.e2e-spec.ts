@@ -7,6 +7,7 @@ import { REFRESH_TOKEN_REPOSITORY } from '@auth/application/ports/refresh-token-
 import { AuthModule } from '@auth/auth.module.js';
 import { RefreshToken } from '@auth/domain/entities/refresh-token.entity.js';
 import { jwtConfig } from '../src/config/jwt.config.js';
+import { googleOauthConfig } from '../src/config/google-oauth.config.js';
 import { passwordHashingConfig } from '../src/config/password-hashing.config.js';
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -20,12 +21,29 @@ import type {
   UserRepositoryPort,
 } from '@users/application/ports/user-repository.port.js';
 import { USER_REPOSITORY } from '@users/application/ports/user-repository.port.js';
+import {
+  ACCOUNT_PROVISIONING_PORT,
+  type AccountProvisioningPort,
+  type GoogleAccountData,
+  type LocalAccountData,
+} from '@users/application/ports/account-provisioning.port.js';
 import { User } from '@users/domain/entities/user.entity.js';
+import {
+  PROFILE_REPOSITORY,
+  type ProfileRepositoryPort,
+} from '@profiles/application/ports/profile-repository.port.js';
+import type { ProfilePartialUpdate } from '@profiles/application/types/profile-partial-update.js';
+import { Profile } from '@profiles/domain/entities/profile.entity.js';
+import { ProfilesModule } from '@profiles/profiles.module.js';
+import { UsernameAlreadyTakenError } from '@users/domain/errors/username-already-taken.error.js';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
 
-class InMemoryUserRepository implements UserRepositoryPort {
+class InMemoryAccountStore
+  implements UserRepositoryPort, AccountProvisioningPort, ProfileRepositoryPort
+{
   private users: User[] = [];
+  private profiles: Profile[] = [];
 
   async findById(id: string): Promise<User | null> {
     return this.users.find((user) => user.id === id) ?? null;
@@ -47,8 +65,79 @@ class InMemoryUserRepository implements UserRepositoryPort {
     return user;
   }
 
+  async createAccount(data: LocalAccountData | GoogleAccountData): Promise<User> {
+    if (this.profiles.some((profile) => profile.username === data.username)) {
+      throw new UsernameAlreadyTakenError();
+    }
+
+    const now = new Date();
+    const user = new User(
+      `user-${this.users.length + 1}`,
+      data.email,
+      'passwordHash' in data ? data.passwordHash : null,
+      now,
+      now,
+    );
+    const profile = new Profile(
+      user.id,
+      data.username,
+      data.displayName,
+      null,
+      data.profilePicture,
+      'PUBLIC',
+      now,
+      now,
+    );
+
+    this.users.push(user);
+    this.profiles.push(profile);
+    return user;
+  }
+
+  async findByUserId(userId: string): Promise<Profile | null> {
+    return this.profiles.find((profile) => profile.userId === userId) ?? null;
+  }
+
+  async findByUsername(username: string): Promise<Profile | null> {
+    return this.profiles.find((profile) => profile.username === username) ?? null;
+  }
+
+  async updateProfile(data: ProfilePartialUpdate, userId: string): Promise<void> {
+    const index = this.profiles.findIndex((profile) => profile.userId === userId);
+    if (index === -1) return;
+
+    const current = this.profiles[index];
+    this.profiles[index] = new Profile(
+      current.userId,
+      current.username,
+      data.displayName ?? current.displayName,
+      data.bio === undefined ? current.bio : data.bio,
+      current.profilePicture,
+      data.visibility ?? current.visibility,
+      current.createdAt,
+      new Date(),
+    );
+  }
+
+  async createProfile(profile: Profile): Promise<void> {
+    this.profiles.push(profile);
+  }
+
+  async deleteProfile(userId: string): Promise<void> {
+    this.profiles = this.profiles.filter((profile) => profile.userId !== userId);
+  }
+
   reset(): void {
     this.users = [];
+    this.profiles = [];
+  }
+
+  userCount(): number {
+    return this.users.length;
+  }
+
+  profileCount(): number {
+    return this.profiles.length;
   }
 }
 
@@ -130,7 +219,7 @@ class InMemoryRefreshTokenRepository implements RefreshTokenRepositoryPort {
 
 describe('Auth HTTP flow (e2e)', () => {
   let app: INestApplication;
-  const users = new InMemoryUserRepository();
+  const accounts = new InMemoryAccountStore();
   const refreshTokens = new InMemoryRefreshTokenRepository();
   const passwordHasher: PasswordHasherPort = {
     hash: vi.fn(async (password) => `hashed:${password}`),
@@ -149,19 +238,28 @@ describe('Auth HTTP flow (e2e)', () => {
     process.env.JWT_SECRET = 'e2e-secret-with-at-least-thirty-two-characters';
     process.env.JWT_ACCESS_TOKEN_TTL = '15m';
     process.env.JWT_REFRESH_TOKEN_TTL_DAYS = '30';
+    process.env.GOOGLE_CLIENT_ID = 'e2e-google-client-id';
+    process.env.GOOGLE_CLIENT_SECRET = 'e2e-google-client-secret';
+    process.env.GOOGLE_CALLBACK_URL = 'http://localhost/api/v1/auth/google/callback';
+    process.env.OAUTH_STATE_SECRET = 'e2e-oauth-state-secret-with-thirty-two-characters';
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({
           isGlobal: true,
           ignoreEnvFile: true,
-          load: [jwtConfig, passwordHashingConfig],
+          load: [jwtConfig, passwordHashingConfig, googleOauthConfig],
         }),
         AuthModule,
+        ProfilesModule,
       ],
     })
       .overrideProvider(USER_REPOSITORY)
-      .useValue(users)
+      .useValue(accounts)
+      .overrideProvider(ACCOUNT_PROVISIONING_PORT)
+      .useValue(accounts)
+      .overrideProvider(PROFILE_REPOSITORY)
+      .useValue(accounts)
       .overrideProvider(REFRESH_TOKEN_REPOSITORY)
       .useValue(refreshTokens)
       .overrideProvider(PasswordHasherService)
@@ -181,13 +279,13 @@ describe('Auth HTTP flow (e2e)', () => {
   });
 
   beforeEach(() => {
-    users.reset();
+    accounts.reset();
     refreshTokens.reset();
     vi.clearAllMocks();
   });
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('registers, authorizes a protected request, rotates, and detects replay', async () => {
@@ -296,5 +394,93 @@ describe('Auth HTTP flow (e2e)', () => {
       .expect(401);
 
     await request(app.getHttpServer()).post('/api/v1/auth/logout').expect(204);
+  });
+
+  it('creates exactly one profile for every registered account and exposes its public shell', async () => {
+    for (const email of ['alice@example.com', 'bob@example.com', 'carol@example.com']) {
+      await request(app.getHttpServer())
+        .post('/api/v1/auth/register')
+        .send({ email, password: 'password1' })
+        .expect(201);
+    }
+
+    expect(accounts.userCount()).toBe(3);
+    expect(accounts.profileCount()).toBe(3);
+
+    await request(app.getHttpServer()).get('/api/v1/profiles/alice').expect(200).expect({
+      username: 'alice',
+      displayName: 'alice',
+      bio: null,
+      profilePicture: null,
+      visibility: 'PUBLIC',
+      followerCount: 0,
+      followingCount: 0,
+      followStatus: 'NONE',
+      posts: [],
+    });
+  });
+
+  it('edits only the authenticated profile and enforces the PATCH field contract', async () => {
+    const owner = await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ email: 'owner@example.com', password: 'password1' })
+      .expect(201);
+    const other = await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ email: 'other@example.com', password: 'password1' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch('/api/v1/profiles/me')
+      .send({ displayName: 'No token' })
+      .expect(401);
+
+    await request(app.getHttpServer())
+      .patch('/api/v1/profiles/me')
+      .set('Authorization', `Bearer ${owner.body.accessToken}`)
+      .send({ displayName: 'Owner Updated', username: 'stolen-name' })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .patch('/api/v1/profiles/me')
+      .set('Authorization', `Bearer ${owner.body.accessToken}`)
+      .send({ displayName: 'Owner Updated', bio: null, visibility: 'PRIVATE' })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .patch('/api/v1/profiles/me')
+      .set('Authorization', `Bearer ${other.body.accessToken}`)
+      .send({ displayName: 'Other Updated' })
+      .expect(200);
+
+    const ownerProfile = await request(app.getHttpServer())
+      .get('/api/v1/profiles/owner')
+      .expect(200);
+    expect(ownerProfile.body).toEqual(
+      expect.objectContaining({
+        username: 'owner',
+        displayName: 'Owner Updated',
+        visibility: 'PRIVATE',
+        posts: [],
+      }),
+    );
+
+    const otherProfile = await request(app.getHttpServer())
+      .get('/api/v1/profiles/other')
+      .expect(200);
+    expect(otherProfile.body).toEqual(expect.objectContaining({ displayName: 'Other Updated' }));
+  });
+
+  it('returns the uniform not-found response for an unknown username', async () => {
+    await request(app.getHttpServer())
+      .get('/api/v1/profiles/missing')
+      .expect(404)
+      .expect({
+        error: {
+          code: 'PROFILE_NOT_FOUND',
+          message: 'Profile with username missing not found',
+          details: null,
+        },
+      });
   });
 });

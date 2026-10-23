@@ -61,5 +61,7 @@ import { GoogleOAuthCallbackUseCase } from './application/use-cases/google-oauth
       useClass: PrismaRefreshTokenRepository,
     },
   ],
+
+  exports: [ACCESS_TOKEN],
 })
 export class AuthModule {}

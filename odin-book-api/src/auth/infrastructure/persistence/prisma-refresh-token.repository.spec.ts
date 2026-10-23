@@ -28,15 +28,14 @@ describe('PrismaRefreshTokenRepository', () => {
     const transactionFindUnique = vi.fn();
     const transactionUpdateMany = vi.fn();
     const updateMany = vi.fn();
-    const transaction = vi.fn(
-      async (work: (transactionClient: unknown) => Promise<unknown>) =>
-        work({
-          refreshToken: {
-            create,
-            findUnique: transactionFindUnique,
-            updateMany: transactionUpdateMany,
-          },
-        }),
+    const transaction = vi.fn(async (work: (transactionClient: unknown) => Promise<unknown>) =>
+      work({
+        refreshToken: {
+          create,
+          findUnique: transactionFindUnique,
+          updateMany: transactionUpdateMany,
+        },
+      }),
     );
 
     const prisma = {
@@ -108,13 +107,8 @@ describe('PrismaRefreshTokenRepository', () => {
   });
 
   it('atomically revokes the current token and creates its replacement in the same family', async () => {
-    const {
-      create,
-      transactionFindUnique,
-      transactionUpdateMany,
-      transaction,
-      repository,
-    } = createRepository();
+    const { create, transactionFindUnique, transactionUpdateMany, transaction, repository } =
+      createRepository();
     const rotatedAt = new Date('2026-10-14T12:00:00.000Z');
     const replacementExpiresAt = new Date('2026-11-13T12:00:00.000Z');
     const input: RotateRefreshTokenData = {
@@ -163,8 +157,7 @@ describe('PrismaRefreshTokenRepository', () => {
   });
 
   it('rejects rotation when another request has already revoked the current token', async () => {
-    const { create, transactionFindUnique, transactionUpdateMany, repository } =
-      createRepository();
+    const { create, transactionFindUnique, transactionUpdateMany, repository } = createRepository();
     transactionFindUnique.mockResolvedValue(persistedToken);
     transactionUpdateMany.mockResolvedValue({ count: 0 });
 

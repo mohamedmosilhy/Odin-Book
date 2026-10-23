@@ -9,6 +9,7 @@ import type { Response } from 'express';
 import { InvalidCredentialsError } from '@auth/domain/errors/invalid-credentials.error.js';
 import { InvalidRefreshTokenError } from '@auth/domain/errors/invalid-refresh-token.error.js';
 import { EmailAlreadyRegisteredError } from '@users/domain/errors/email-already-registered.error.js';
+import { ProfileNotFoundError } from '@profiles/domain/errors/profile-not-found.error.js';
 
 type ApiErrorCode =
   | 'INVALID_CREDENTIALS'
@@ -16,7 +17,8 @@ type ApiErrorCode =
   | 'EMAIL_ALREADY_REGISTERED'
   | 'UNAUTHENTICATED'
   | 'VALIDATION_ERROR'
-  | 'INTERNAL_SERVER_ERROR';
+  | 'INTERNAL_SERVER_ERROR'
+  | 'PROFILE_NOT_FOUND';
 
 interface ApiErrorResponse {
   error: {
@@ -95,6 +97,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
           code: 'VALIDATION_ERROR',
           message: 'Validation failed.',
           details,
+        },
+      };
+    } else if (exception instanceof ProfileNotFoundError) {
+      status = 404;
+      body = {
+        error: {
+          code: 'PROFILE_NOT_FOUND',
+          message: exception.message,
+          details: null,
         },
       };
     }

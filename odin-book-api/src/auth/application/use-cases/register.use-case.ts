@@ -13,6 +13,11 @@ import {
   REFRESH_TOKEN_REPOSITORY,
   type RefreshTokenRepositoryPort,
 } from '../ports/refresh-token-repository.port.js';
+import {
+  ACCOUNT_PROVISIONING_PORT,
+  type AccountProvisioningPort,
+} from '@users/application/ports/account-provisioning.port.js';
+import { UsernameAlreadyTakenError } from '@users/domain/errors/username-already-taken.error.js';
 
 export class RegisterUseCase {
   constructor(
@@ -26,6 +31,9 @@ export class RegisterUseCase {
     private readonly refreshTokenService: RefreshTokenServicePort,
     @Inject(REFRESH_TOKEN_REPOSITORY)
     private readonly refreshTokenRepository: RefreshTokenRepositoryPort,
+
+    @Inject(ACCOUNT_PROVISIONING_PORT)
+    private readonly accountProvisioningPort: AccountProvisioningPort,
   ) {}
 
   async execute(email: string, password: string): Promise<AuthenticationResult> {
@@ -35,16 +43,37 @@ export class RegisterUseCase {
       throw new EmailAlreadyRegisteredError();
     }
 
-    const now = new Date();
-    
     const passwordHash = await this.passwordHasher.hash(password);
 
-    const newUser = await this.userRepository.create({
-      email,
-      passwordHash,
-      createdAt: now,
-      updatedAt: now,
-    });
+    const emailPrefix = email.split('@')[0].toLowerCase();
+
+    const baseUsername = emailPrefix.replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '') || 'user';
+
+    let newUser;
+
+    try {
+      newUser = await this.accountProvisioningPort.createAccount({
+        email,
+        passwordHash,
+        username: baseUsername,
+        displayName: baseUsername,
+        profilePicture: null,
+      });
+    } catch (error: unknown) {
+      if (!(error instanceof UsernameAlreadyTakenError)) {
+        throw error;
+      }
+
+      const uniqueUsername = `${baseUsername}-${crypto.randomUUID().slice(0, 8)}`;
+
+      newUser = await this.accountProvisioningPort.createAccount({
+        email,
+        passwordHash,
+        username: uniqueUsername,
+        displayName: baseUsername,
+        profilePicture: null,
+      });
+    }
 
     const accessToken = await this.accessTokenPort.generate(newUser.id);
     const refreshToken = await this.refreshTokenService.generate();
