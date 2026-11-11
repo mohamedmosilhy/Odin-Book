@@ -37,6 +37,21 @@ describe('VisibilityPolicy', () => {
     expect(isActiveFollower.execute).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['PUBLIC', true],
+    ['PRIVATE', false],
+  ] as const)(
+    'returns %s visibility access as %s for an anonymous viewer',
+    async (visibility, allowed) => {
+      const { getProfileVisibility, isActiveFollower, policy } = createPolicy();
+      getProfileVisibility.execute.mockResolvedValue(visibility);
+
+      await expect(policy.canView(null, 'author-1')).resolves.toBe(allowed);
+      expect(getProfileVisibility.execute).toHaveBeenCalledWith('author-1');
+      expect(isActiveFollower.execute).not.toHaveBeenCalled();
+    },
+  );
+
   it('allows an active follower to view a private profile', async () => {
     const { getProfileVisibility, isActiveFollower, policy } = createPolicy();
     getProfileVisibility.execute.mockResolvedValue('PRIVATE');

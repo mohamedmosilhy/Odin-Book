@@ -5,6 +5,7 @@ import { IncomingFollowResponse } from '@social/application/types/incoming-follo
 import { AcceptFollowRequestUseCase } from '@social/application/use-cases/accept-follow-request.use-case.js';
 import { GetIncomingFollowRequestsUseCase } from '@social/application/use-cases/get-incoming-follow-requests.use-case.js';
 import { RejectFollowRequestUseCase } from '@social/application/use-cases/reject-follow-request.use-case.js';
+import { SocialPaginationQueryDto } from '../dto/social.dto.js';
 
 @Controller('social/requests')
 export class FollowRequestsController {
@@ -17,14 +18,13 @@ export class FollowRequestsController {
   @Get('incoming')
   @UseGuards(AuthGuard)
   async getIncomingFollowRequests(
-    @Query('cursor') cursor: string | null,
-    @Query('limit') limit: number,
+    @Query() socialPagination: SocialPaginationQueryDto,
     @CurrentUser() user: { id: string },
   ): Promise<IncomingFollowResponse> {
     const requesterId = user.id;
     const result = await this.getIncomingFollowRequestsUseCase.execute(requesterId, {
-      cursor,
-      limit,
+      cursor: socialPagination.cursor,
+      limit: socialPagination.limit,
     });
     return result;
   }

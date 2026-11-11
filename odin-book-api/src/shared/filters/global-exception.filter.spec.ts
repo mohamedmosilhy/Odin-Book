@@ -11,6 +11,7 @@ import { ProfileNotFoundError } from '@profiles/domain/errors/profile-not-found.
 import { DuplicateRelationshipError } from '@social/domain/errors/duplicate-relationship.error.js';
 import { FollowRelationshipNotFoundError } from '@social/domain/errors/follow-relationship-not-found.error.js';
 import { InvalidSameUserError } from '@social/domain/errors/same-user.error.js';
+import { InvalidTargetError } from '@social/domain/errors/invalid-target.error.js';
 import { HttpExceptionFilter } from './global-exception.filter.js';
 
 describe('HttpExceptionFilter', () => {
@@ -79,6 +80,23 @@ describe('HttpExceptionFilter', () => {
     expect(json).toHaveBeenCalledWith({
       error: { code, message, details: null },
     });
+  });
+
+  it('returns 403 when a user attempts to manage another user’s incoming request', () => {
+    const { host, status, json } = createHttpHost();
+    const exception = new InvalidTargetError();
+
+    new HttpExceptionFilter().catch(exception, host);
+
+    expect(status).toHaveBeenCalledWith(HttpStatus.FORBIDDEN);
+    expect(json).toHaveBeenCalledWith({
+      error: {
+        code: expect.any(String),
+        message: exception.message,
+        details: null,
+      },
+    });
+    expect(json.mock.calls[0][0].error.code).not.toBe('INTERNAL_SERVER_ERROR');
   });
 
   it('maps guard failures to UNAUTHENTICATED without exposing JWT details', () => {

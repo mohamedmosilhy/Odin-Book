@@ -9,12 +9,14 @@ export class VisibilityPolicy {
     private isActiveFollower: IsActiveFollowerUseCase,
   ) {}
 
-  async canView(viewerId: string, authorId: string): Promise<boolean> {
+  async canView(viewerId: string | null, authorId: string): Promise<boolean> {
     if (viewerId === authorId) return true;
 
     const visibility = await this.getProfileVisibility.execute(authorId);
 
     if (visibility === 'PUBLIC') return true;
+
+    if (viewerId === null) return false;
 
     return this.isActiveFollower.execute(viewerId, authorId);
   }

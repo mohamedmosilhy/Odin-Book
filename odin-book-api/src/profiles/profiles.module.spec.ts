@@ -1,5 +1,5 @@
 import { MODULE_METADATA } from '@nestjs/common/constants.js';
-import { SharedModule } from '@shared/shared.module.js';
+import { InfrastructureModule } from '@shared/infrastructure.module.js';
 import { GetProfileVisibilityUseCase } from './application/use-cases/get-profile-visibility.use-case.js';
 import { ResolveProfileByUsernameUseCase } from './application/use-cases/resolve-profile-by-username.use-case.js';
 import { ProfileController } from './presentation/controllers/profile.controller.js';
@@ -10,7 +10,7 @@ describe('ProfilesModule', () => {
     const imports = (Reflect.getOwnMetadata(MODULE_METADATA.IMPORTS, ProfilesModule) ??
       []) as unknown[];
 
-    expect(imports).toContain(SharedModule);
+    expect(imports).toContain(InfrastructureModule);
   });
 
   it('registers the profile HTTP controller', () => {

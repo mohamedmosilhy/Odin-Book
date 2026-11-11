@@ -1,7 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PrismaSocialRepository } from './infrastructure/persistence/prisma-social.repository.js';
-import { SOCIAL_REPOSITORY } from './application/ports/social-repository.port.js';
-
 import { ProfileFollowUseCase } from './application/use-cases/profile-follow.use-case.js';
 import { ProfileUnfollowUseCase } from './application/use-cases/profile-unfollow.use-case.js';
 import { ProfileFollowController } from './presentation/controllers/profile-follow.controller.js';
@@ -11,24 +8,25 @@ import { FollowRequestsController } from './presentation/controllers/follow-requ
 import { GetIncomingFollowRequestsUseCase } from './application/use-cases/get-incoming-follow-requests.use-case.js';
 import { AcceptFollowRequestUseCase } from './application/use-cases/accept-follow-request.use-case.js';
 import { RejectFollowRequestUseCase } from './application/use-cases/reject-follow-request.use-case.js';
-import { IsActiveFollowerUseCase } from './application/use-cases/is-active-follower.use-case.js';
+
 import { InfrastructureModule } from '@shared/infrastructure.module.js';
+import { SocialGraphModule } from './social-graph.module.js';
+import { SharedModule } from '@shared/shared.module.js';
+import { FollowersListUseCase } from './application/use-cases/followers-list.use-case.js';
+import { FollowingListUseCase } from './application/use-cases/following-list.use-case.js';
 
 @Module({
   controllers: [ProfileFollowController, FollowRequestsController],
-  imports: [AuthModule, ProfilesModule, InfrastructureModule],
+  imports: [AuthModule, ProfilesModule, InfrastructureModule, SocialGraphModule, SharedModule],
   providers: [
     ProfileFollowUseCase,
     ProfileUnfollowUseCase,
     GetIncomingFollowRequestsUseCase,
     AcceptFollowRequestUseCase,
     RejectFollowRequestUseCase,
-    IsActiveFollowerUseCase,
-    { provide: SOCIAL_REPOSITORY, useClass: PrismaSocialRepository },
+    FollowersListUseCase,
+    FollowingListUseCase,
   ],
-  exports: [
-    IsActiveFollowerUseCase,
-    { provide: SOCIAL_REPOSITORY, useClass: PrismaSocialRepository },
-  ],
+  exports: [],
 })
 export class SocialModule {}

@@ -13,6 +13,7 @@ import { ProfileNotFoundError } from '@profiles/domain/errors/profile-not-found.
 import { InvalidSameUserError } from '@social/domain/errors/same-user.error.js';
 import { DuplicateRelationshipError } from '@social/domain/errors/duplicate-relationship.error.js';
 import { FollowRelationshipNotFoundError } from '@social/domain/errors/follow-relationship-not-found.error.js';
+import { InvalidTargetError } from '@social/domain/errors/invalid-target.error.js';
 
 type ApiErrorCode =
   | 'INVALID_CREDENTIALS'
@@ -23,6 +24,7 @@ type ApiErrorCode =
   | 'INTERNAL_SERVER_ERROR'
   | 'PROFILE_NOT_FOUND'
   | 'SELF_FOLLOW_NOT_ALLOWED'
+  | 'INVALID_TARGET'
   | 'FOLLOW_RELATIONSHIP_ALREADY_EXISTS'
   | 'FOLLOW_RELATIONSHIP_NOT_FOUND';
 
@@ -137,6 +139,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
       body = {
         error: {
           code: 'FOLLOW_RELATIONSHIP_NOT_FOUND',
+          message: exception.message,
+          details: null,
+        },
+      };
+    } else if (exception instanceof InvalidTargetError) {
+      status = 403;
+      body = {
+        error: {
+          code: 'INVALID_TARGET',
           message: exception.message,
           details: null,
         },

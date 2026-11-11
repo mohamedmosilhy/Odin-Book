@@ -41,7 +41,7 @@ describe('FollowRequestsController', () => {
     getIncomingUseCase.execute.mockResolvedValue(response);
 
     await expect(
-      controller.getIncomingFollowRequests(query.cursor, query.limit, { id: 'target-user-id' }),
+      controller.getIncomingFollowRequests(query, { id: 'target-user-id' }),
     ).resolves.toEqual(response);
 
     expect(getIncomingUseCase.execute).toHaveBeenCalledWith('target-user-id', query);
