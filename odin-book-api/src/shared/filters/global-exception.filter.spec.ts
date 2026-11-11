@@ -1,3 +1,5 @@
+import { InvalidRequesterError } from '@social/domain/errors/invalid-requester.error.js';
+import { InvalidStatusError } from '@social/domain/errors/invalid-status.error.js';
 import { InvalidCredentialsError } from '@auth/domain/errors/invalid-credentials.error.js';
 import { InvalidRefreshTokenError } from '@auth/domain/errors/invalid-refresh-token.error.js';
 import {
@@ -28,6 +30,18 @@ describe('HttpExceptionFilter', () => {
   }
 
   it.each([
+    {
+      exception: new InvalidRequesterError(),
+      statusCode: HttpStatus.FORBIDDEN,
+      code: 'INVALID_REQUESTER',
+      message: 'Invalid requester user',
+    },
+    {
+      exception: new InvalidStatusError('already active'),
+      statusCode: HttpStatus.CONFLICT,
+      code: 'INVALID_FOLLOW_STATUS',
+      message: 'Invalid status: already active',
+    },
     {
       exception: new InvalidCredentialsError(),
       statusCode: HttpStatus.UNAUTHORIZED,
@@ -91,7 +105,7 @@ describe('HttpExceptionFilter', () => {
     expect(status).toHaveBeenCalledWith(HttpStatus.FORBIDDEN);
     expect(json).toHaveBeenCalledWith({
       error: {
-        code: expect.any(String),
+        code: 'INVALID_TARGET',
         message: exception.message,
         details: null,
       },

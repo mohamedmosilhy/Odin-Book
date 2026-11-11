@@ -30,6 +30,7 @@ export class FollowRequestsController {
   }
 
   @Post(':requestId/accept')
+  @HttpCode(204)
   @UseGuards(AuthGuard)
   async acceptFollowRequest(
     @Param('requestId') requestId: string,

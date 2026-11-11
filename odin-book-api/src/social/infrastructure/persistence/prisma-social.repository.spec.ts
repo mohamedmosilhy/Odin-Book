@@ -20,6 +20,7 @@ describe('PrismaSocialRepository', () => {
 
   function createRepository() {
     const create = vi.fn();
+    const count = vi.fn();
     const findMany = vi.fn();
     const findUnique = vi.fn();
     const update = vi.fn();
@@ -27,6 +28,7 @@ describe('PrismaSocialRepository', () => {
     const prisma = {
       followRelationship: {
         create,
+        count,
         findMany,
         findUnique,
         update,
@@ -36,6 +38,7 @@ describe('PrismaSocialRepository', () => {
 
     return {
       create,
+      count,
       findMany,
       findUnique,
       remove,
@@ -184,7 +187,7 @@ describe('PrismaSocialRepository', () => {
     ]);
 
     await expect(
-      repository.getPendingFollowRequestsForUser('target-1', { limit: 20 }),
+      repository.getPendingFollowRequestsForUser('target-1', { cursor: null, limit: 20 }),
     ).resolves.toEqual({
       items: [
         {
@@ -300,9 +303,11 @@ describe('PrismaSocialRepository', () => {
         where: {
           targetId: 'target-1',
           status: 'PENDING',
+          OR: [
+            { createdAt: { gt: new Date('2026-10-25T11:00:00.000Z') } },
+            { createdAt: new Date('2026-10-25T11:00:00.000Z'), id: { gt: 'request-2' } },
+          ],
         },
-        cursor: { id: 'request-2' },
-        skip: 1,
         orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
         take: 3,
       }),
@@ -412,9 +417,14 @@ describe('PrismaSocialRepository', () => {
 
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { requesterId: 'requester-1', status: 'ACTIVE' },
-        cursor: { id: 'relationship-2' },
-        skip: 1,
+        where: {
+          requesterId: 'requester-1',
+          status: 'ACTIVE',
+          OR: [
+            { createdAt: { gt: new Date('2026-10-25T11:00:00.000Z') } },
+            { createdAt: new Date('2026-10-25T11:00:00.000Z'), id: { gt: 'relationship-2' } },
+          ],
+        },
         take: 3,
         orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       }),
@@ -524,9 +534,14 @@ describe('PrismaSocialRepository', () => {
 
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { targetId: 'target-1', status: 'ACTIVE' },
-        cursor: { id: 'relationship-2' },
-        skip: 1,
+        where: {
+          targetId: 'target-1',
+          status: 'ACTIVE',
+          OR: [
+            { createdAt: { gt: new Date('2026-10-25T11:00:00.000Z') } },
+            { createdAt: new Date('2026-10-25T11:00:00.000Z'), id: { gt: 'relationship-2' } },
+          ],
+        },
         take: 3,
         orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       }),
@@ -556,4 +571,46 @@ describe('PrismaSocialRepository', () => {
       pageInfo: { nextCursor: null, hasMore: false },
     });
   });
+  it.each([
+    { row: null, expected: false },
+    { row: { ...persistedRelationship, status: 'PENDING' }, expected: false },
+    { row: persistedRelationship, expected: true },
+  ])(
+    'grants follower lookup only for ACTIVE relationships: $expected',
+    async ({ row, expected }) => {
+      const { repository, findUnique } = createRepository();
+      findUnique.mockResolvedValue(row);
+      await expect(repository.isFollowing('viewer-1', 'target-1')).resolves.toBe(expected);
+      expect(findUnique).toHaveBeenCalledWith({
+        where: { requesterId_targetId: { requesterId: 'viewer-1', targetId: 'target-1' } },
+      });
+    },
+  );
+
+  it.each(['getFollowerCount', 'getFollowingCount'] as const)(
+    'counts only active relationships using %s',
+    async (method) => {
+      const { repository, count } = createRepository();
+      count.mockResolvedValue(4);
+      await expect(repository[method]('target-1')).resolves.toBe(4);
+      expect(count).toHaveBeenCalledWith({
+        where: {
+          [method === 'getFollowerCount' ? 'targetId' : 'requesterId']: 'target-1',
+          status: 'ACTIVE',
+        },
+      });
+    },
+  );
+
+  it.each(['NONE', 'PENDING', 'ACTIVE'] as const)(
+    'returns viewer-relative status %s',
+    async (status) => {
+      const { repository, findUnique } = createRepository();
+      findUnique.mockResolvedValue(status === 'NONE' ? null : { ...persistedRelationship, status });
+      await expect(repository.getViewerFollowStatus('viewer-1', 'target-1')).resolves.toBe(status);
+      expect(findUnique).toHaveBeenCalledWith({
+        where: { requesterId_targetId: { requesterId: 'viewer-1', targetId: 'target-1' } },
+      });
+    },
+  );
 });

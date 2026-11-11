@@ -6,6 +6,8 @@ export class SocialPaginationQueryDto {
   @Transform(({ value }) => {
     if (value === undefined) return 20;
 
+    if (typeof value !== 'string' && typeof value !== 'number') return Number.NaN;
+
     const parsed = Number(value);
 
     if (!Number.isInteger(parsed) || parsed < 1) {

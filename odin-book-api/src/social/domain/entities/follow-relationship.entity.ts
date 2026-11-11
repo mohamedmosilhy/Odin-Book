@@ -30,16 +30,17 @@ export class FollowRelationship {
   }
 
   accept(actorId: string): void {
+    this.ensureValidTargetId(actorId);
     if (this.status === 'ACTIVE') {
       throw new InvalidStatusError('Follow relationship is already active');
     }
-    this.ensureValidTargetId(actorId);
 
     this.status = 'ACTIVE';
     this.updatedAt = new Date();
   }
 
   reject(actorId: string): void {
+    this.ensureValidTargetId(actorId);
     if (this.status !== 'PENDING') {
       throw new InvalidStatusError('Only pending follow requests can be rejected');
     }
@@ -47,6 +48,7 @@ export class FollowRelationship {
   }
 
   cancel(actorId: string): void {
+    this.ensureValidRequesterId(actorId);
     if (this.status !== 'PENDING') {
       throw new InvalidStatusError('Only pending follow requests can be canceled');
     }
@@ -54,6 +56,7 @@ export class FollowRelationship {
   }
 
   unfollow(actorId: string): void {
+    this.ensureValidRequesterId(actorId);
     if (this.status !== 'ACTIVE') {
       throw new InvalidStatusError('Only active follow relationships can be unfollowed');
     }

@@ -33,7 +33,7 @@ export class ProfileFollowController {
   async getFollowers(
     @Param('username') username: string,
     @Query() socialPagination: SocialPaginationQueryDto,
-    @CurrentUser() user: { id: string } | null,
+    @CurrentUser() user: { id: string } | null | undefined,
   ): Promise<OutgoingFollowResponse> {
     return this.followersListUseCase.execute(username, user?.id ?? null, {
       cursor: socialPagination.cursor,
@@ -46,7 +46,7 @@ export class ProfileFollowController {
   async getFollowed(
     @Param('username') username: string,
     @Query() socialPagination: SocialPaginationQueryDto,
-    @CurrentUser() user: { id: string } | null,
+    @CurrentUser() user: { id: string } | null | undefined,
   ): Promise<OutgoingFollowResponse> {
     return this.followingListUseCase.execute(username, user?.id ?? null, {
       cursor: socialPagination.cursor,

@@ -1,3 +1,6 @@
+import { InvalidFollowCursorError } from '@shared/pagination/follow-cursor.js';
+import { InvalidRequesterError } from '@social/domain/errors/invalid-requester.error.js';
+import { InvalidStatusError } from '@social/domain/errors/invalid-status.error.js';
 import {
   ArgumentsHost,
   BadRequestException,
@@ -25,6 +28,8 @@ type ApiErrorCode =
   | 'PROFILE_NOT_FOUND'
   | 'SELF_FOLLOW_NOT_ALLOWED'
   | 'INVALID_TARGET'
+  | 'INVALID_REQUESTER'
+  | 'INVALID_FOLLOW_STATUS'
   | 'FOLLOW_RELATIONSHIP_ALREADY_EXISTS'
   | 'FOLLOW_RELATIONSHIP_NOT_FOUND';
 
@@ -87,10 +92,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
           details: null,
         },
       };
-    } else if (exception instanceof BadRequestException) {
+    } else if (
+      exception instanceof BadRequestException ||
+      exception instanceof InvalidFollowCursorError
+    ) {
       status = 400;
 
-      const exceptionResponse = exception.getResponse();
+      const exceptionResponse =
+        exception instanceof BadRequestException
+          ? exception.getResponse()
+          : { message: [exception.message] };
 
       const details =
         typeof exceptionResponse === 'object' &&
@@ -148,6 +159,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
       body = {
         error: {
           code: 'INVALID_TARGET',
+          message: exception.message,
+          details: null,
+        },
+      };
+    }
+
+    if (exception instanceof InvalidRequesterError || exception instanceof InvalidStatusError) {
+      status = exception instanceof InvalidRequesterError ? 403 : 409;
+      body = {
+        error: {
+          code:
+            exception instanceof InvalidRequesterError
+              ? 'INVALID_REQUESTER'
+              : 'INVALID_FOLLOW_STATUS',
           message: exception.message,
           details: null,
         },

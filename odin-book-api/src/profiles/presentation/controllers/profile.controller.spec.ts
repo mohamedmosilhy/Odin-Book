@@ -2,6 +2,7 @@ import type { EditProfileUseCase } from '@profiles/application/use-cases/edit-pr
 import type { GetProfileByUsernameUseCase } from '@profiles/application/use-cases/get-profile-by-username.use-case.js';
 import { GUARDS_METADATA, PATH_METADATA } from '@nestjs/common/constants.js';
 import { AuthGuard } from '@shared/guards/auth.guard.js';
+import { OptionalAuthGuard } from '@shared/guards/optional-auth.guard.js';
 import { ProfileController } from './profile.controller.js';
 
 describe('ProfileController', () => {
@@ -35,14 +36,20 @@ describe('ProfileController', () => {
     };
     getProfileByUsernameUseCase.execute.mockResolvedValue(response);
 
-    await expect(controller.getProfileByUsername('jane')).resolves.toEqual(response);
-    expect(getProfileByUsernameUseCase.execute).toHaveBeenCalledWith('jane');
+    await expect(controller.getProfileByUsername('jane', null)).resolves.toEqual(response);
+    expect(getProfileByUsernameUseCase.execute).toHaveBeenCalledWith('jane', null);
     expect(
       Reflect.getMetadata(PATH_METADATA, ProfileController.prototype.getProfileByUsername),
     ).toBe(':username');
     expect(
       Reflect.getMetadata(GUARDS_METADATA, ProfileController.prototype.getProfileByUsername),
-    ).toBeUndefined();
+    ).toEqual([OptionalAuthGuard]);
+  });
+
+  it('forwards the authenticated viewer identity when reading a profile', async () => {
+    const { controller, getProfileByUsernameUseCase } = createController();
+    await controller.getProfileByUsername('jane', { id: 'viewer-1' });
+    expect(getProfileByUsernameUseCase.execute).toHaveBeenCalledWith('jane', 'viewer-1');
   });
 
   it('protects PATCH /profiles/me and edits only the authenticated user profile', async () => {

@@ -48,6 +48,6 @@ describe('GetIncomingFollowRequestsUseCase', () => {
     };
     getPendingFollowRequestsForUser.mockResolvedValue(result);
 
-    await expect(useCase.execute('target-1', { limit: 20 })).resolves.toEqual(result);
+    await expect(useCase.execute('target-1', { cursor: null, limit: 20 })).resolves.toEqual(result);
   });
 });

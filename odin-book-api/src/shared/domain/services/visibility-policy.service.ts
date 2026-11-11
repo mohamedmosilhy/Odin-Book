@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common/decorators/core/index.js';
+import { Injectable } from '@nestjs/common';
 import { GetProfileVisibilityUseCase } from '@profiles/application/use-cases/get-profile-visibility.use-case.js';
 import { IsActiveFollowerUseCase } from '@social/application/use-cases/is-active-follower.use-case.js';
 

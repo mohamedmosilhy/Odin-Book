@@ -8,10 +8,11 @@ import { AuthModule } from '@auth/auth.module.js';
 import { GetProfileVisibilityUseCase } from './application/use-cases/get-profile-visibility.use-case.js';
 import { ResolveProfileByUsernameUseCase } from './application/use-cases/resolve-profile-by-username.use-case.js';
 import { InfrastructureModule } from '@shared/infrastructure.module.js';
+import { SocialGraphModule } from '@social/social-graph.module.js';
 
 @Module({
   controllers: [ProfileController],
-  imports: [InfrastructureModule, AuthModule],
+  imports: [InfrastructureModule, AuthModule, SocialGraphModule],
   providers: [
     EditProfileUseCase,
     GetProfileByUsernameUseCase,

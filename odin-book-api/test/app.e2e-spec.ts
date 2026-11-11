@@ -4,6 +4,7 @@ import type {
   RotateRefreshTokenData,
 } from '@auth/application/ports/refresh-token-repository.port.js';
 import { REFRESH_TOKEN_REPOSITORY } from '@auth/application/ports/refresh-token-repository.port.js';
+import { SOCIAL_REPOSITORY } from '@social/application/ports/social-repository.port.js';
 import { AuthModule } from '@auth/auth.module.js';
 import { RefreshToken } from '@auth/domain/entities/refresh-token.entity.js';
 import { jwtConfig } from '../src/config/jwt.config.js';
@@ -264,6 +265,12 @@ describe('Auth HTTP flow (e2e)', () => {
       .useValue(refreshTokens)
       .overrideProvider(PasswordHasherService)
       .useValue(passwordHasher)
+      .overrideProvider(SOCIAL_REPOSITORY)
+      .useValue({
+        getFollowerCount: async () => 0,
+        getFollowingCount: async () => 0,
+        getViewerFollowStatus: async () => 'NONE',
+      })
       .overrideProvider(PrismaService)
       .useValue({})
       .compile();

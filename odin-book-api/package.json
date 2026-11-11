@@ -22,7 +22,8 @@
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint:eslint": "eslint \"{src,test}/**/*.ts\"",
     "lint:eslint:fix": "eslint \"{src,test}/**/*.ts\" --fix",
-    "db:seed": "node --import tsx prisma/seed.ts"
+    "db:seed": "node --import tsx prisma/seed.ts",
+    "test:integration": "vitest run --config ./vitest.config.integration.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",

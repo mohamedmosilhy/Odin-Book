@@ -1,3 +1,4 @@
+import { decodeFollowCursor } from '../pagination/follow-cursor.js';
 import { registerDecorator, type ValidationOptions } from 'class-validator';
 
 export function IsValidFollowCursor(validationOptions?: ValidationOptions) {
@@ -12,17 +13,8 @@ export function IsValidFollowCursor(validationOptions?: ValidationOptions) {
           if (typeof value !== 'string') return false;
 
           try {
-            const decoded = JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
-
-            return (
-              typeof decoded === 'object' &&
-              decoded !== null &&
-              !Array.isArray(decoded) &&
-              typeof decoded.id === 'string' &&
-              decoded.id.trim().length > 0 &&
-              typeof decoded.createdAt === 'string' &&
-              !Number.isNaN(Date.parse(decoded.createdAt))
-            );
+            decodeFollowCursor(value);
+            return true;
           } catch {
             return false;
           }

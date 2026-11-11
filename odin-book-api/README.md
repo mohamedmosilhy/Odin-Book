@@ -57,6 +57,14 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Social database integration tests
+
+`npm run test:integration` runs social HTTP flows using real PostgreSQL persistence.
+Set `E2E_DATABASE_URL` to a dedicated database named `odin_book_test*` and apply the
+existing Prisma migrations first. The suite deletes users and their cascaded data
+in that database. See [the Milestone 3 review](../docs/Implementation%20Plan/milestone-03-review.md)
+for commands, coverage, and the module dependency map.
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.

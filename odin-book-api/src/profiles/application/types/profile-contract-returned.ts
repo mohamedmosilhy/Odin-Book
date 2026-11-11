@@ -1,7 +1,7 @@
 export type ProfileContractReturned = {
-  followerCount: 0;
-  followingCount: 0;
-  followStatus: 'NONE';
+  followerCount: number;
+  followingCount: number;
+  followStatus: 'NONE' | 'PENDING' | 'ACTIVE';
   posts: [];
   username: string;
   displayName: string;

@@ -1,3 +1,4 @@
+import { decodeFollowCursor } from '@shared/pagination/follow-cursor.js';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@shared/infrastructure/database/prisma.service.js';
 import {
@@ -89,25 +90,21 @@ export class PrismaSocialRepository implements SocialRepositoryPort {
     targetId: string,
     query: { cursor: string | null; limit: number },
   ): Promise<IncomingFollowResponse> {
-    const decodedCursor =
-      query.cursor == null
-        ? null
-        : (JSON.parse(Buffer.from(query.cursor, 'base64url').toString('utf8')) as {
-            createdAt: string;
-            id: string;
-          });
+    const decodedCursor = query.cursor == null ? null : decodeFollowCursor(query.cursor);
 
     const pendingRequests = await this.prismaService.followRelationship.findMany({
       where: {
         targetId,
         status: 'PENDING',
+        ...(decodedCursor
+          ? {
+              OR: [
+                { createdAt: { gt: new Date(decodedCursor.createdAt) } },
+                { createdAt: new Date(decodedCursor.createdAt), id: { gt: decodedCursor.id } },
+              ],
+            }
+          : {}),
       },
-      ...(decodedCursor
-        ? {
-            cursor: { id: decodedCursor.id },
-            skip: 1,
-          }
-        : {}),
       take: query.limit + 1,
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       include: {
@@ -155,25 +152,21 @@ export class PrismaSocialRepository implements SocialRepositoryPort {
     userId: string,
     query: { cursor: string | null; limit: number },
   ): Promise<OutgoingFollowResponse> {
-    const decodedCursor =
-      query.cursor == null
-        ? null
-        : (JSON.parse(Buffer.from(query.cursor, 'base64url').toString('utf8')) as {
-            createdAt: string;
-            id: string;
-          });
+    const decodedCursor = query.cursor == null ? null : decodeFollowCursor(query.cursor);
 
     const followedUsers = await this.prismaService.followRelationship.findMany({
       where: {
         requesterId: userId,
         status: 'ACTIVE',
+        ...(decodedCursor
+          ? {
+              OR: [
+                { createdAt: { gt: new Date(decodedCursor.createdAt) } },
+                { createdAt: new Date(decodedCursor.createdAt), id: { gt: decodedCursor.id } },
+              ],
+            }
+          : {}),
       },
-      ...(decodedCursor
-        ? {
-            cursor: { id: decodedCursor.id },
-            skip: 1,
-          }
-        : {}),
       include: {
         target: {
           include: {
@@ -218,26 +211,22 @@ export class PrismaSocialRepository implements SocialRepositoryPort {
     userId: string,
     query: { cursor: string | null; limit: number },
   ): Promise<OutgoingFollowResponse> {
-    const decodedCursor =
-      query.cursor == null
-        ? null
-        : (JSON.parse(Buffer.from(query.cursor, 'base64url').toString('utf8')) as {
-            createdAt: string;
-            id: string;
-          });
+    const decodedCursor = query.cursor == null ? null : decodeFollowCursor(query.cursor);
 
     const activeFollowers = await this.prismaService.followRelationship.findMany({
       where: {
         targetId: userId,
         status: 'ACTIVE',
+        ...(decodedCursor
+          ? {
+              OR: [
+                { createdAt: { gt: new Date(decodedCursor.createdAt) } },
+                { createdAt: new Date(decodedCursor.createdAt), id: { gt: decodedCursor.id } },
+              ],
+            }
+          : {}),
       },
 
-      ...(decodedCursor
-        ? {
-            cursor: { id: decodedCursor.id },
-            skip: 1,
-          }
-        : {}),
       take: query.limit + 1,
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
 

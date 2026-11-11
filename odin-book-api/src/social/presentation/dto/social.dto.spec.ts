@@ -97,6 +97,30 @@ describe('SocialPaginationQueryDto', () => {
     },
   );
 
+  it.each([['20'], ['20', '30'], { value: '20' }])(
+    'rejects a non-scalar limit %j',
+    async (limit) => {
+      await expect(parse({ limit })).rejects.toBeInstanceOf(BadRequestException);
+    },
+  );
+
+  it.each(['2026-02-30T10:00:00.000Z', 'November 11, 2026', '2026-11-11'])(
+    'rejects a non-canonical cursor timestamp %s',
+    async (createdAt) => {
+      const cursor = Buffer.from(JSON.stringify({ id: 'request-1', createdAt })).toString(
+        'base64url',
+      );
+      await expect(parse({ cursor })).rejects.toBeInstanceOf(BadRequestException);
+    },
+  );
+
+  it('rejects junk appended to an otherwise valid cursor', async () => {
+    const cursor = Buffer.from(
+      JSON.stringify({ id: 'request-1', createdAt: '2026-11-11T10:00:00.000Z' }),
+    ).toString('base64url');
+    await expect(parse({ cursor: cursor + '!' })).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   it('rejects unknown query parameters', async () => {
     await expect(parse({ unexpected: 'value' })).rejects.toBeInstanceOf(BadRequestException);
   });
