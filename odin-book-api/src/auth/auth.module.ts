@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { RegisterUseCase } from './application/use-cases/register.use-case.js';
 import { UsersModule } from '@users/users.module.js';
-import { SharedModule } from '@shared/shared.module.js';
 import { AuthController } from './presentation/controllers/auth.controller.js';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -19,6 +18,7 @@ import { GooglePassportGuard } from './presentation/guards/google-passport.guard
 import { PassportModule } from '@nestjs/passport';
 import { GoogleStrategy } from './infrastructure/strategies/google.strategy.js';
 import { GoogleOAuthCallbackUseCase } from './application/use-cases/google-oauth-callback.use-case.js';
+import { InfrastructureModule } from '@shared/infrastructure.module.js';
 
 @Module({
   controllers: [AuthController],
@@ -26,7 +26,7 @@ import { GoogleOAuthCallbackUseCase } from './application/use-cases/google-oauth
   imports: [
     UsersModule,
     PassportModule.register({ session: false }),
-    SharedModule,
+    InfrastructureModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -10,6 +10,9 @@ import { InvalidCredentialsError } from '@auth/domain/errors/invalid-credentials
 import { InvalidRefreshTokenError } from '@auth/domain/errors/invalid-refresh-token.error.js';
 import { EmailAlreadyRegisteredError } from '@users/domain/errors/email-already-registered.error.js';
 import { ProfileNotFoundError } from '@profiles/domain/errors/profile-not-found.error.js';
+import { InvalidSameUserError } from '@social/domain/errors/same-user.error.js';
+import { DuplicateRelationshipError } from '@social/domain/errors/duplicate-relationship.error.js';
+import { FollowRelationshipNotFoundError } from '@social/domain/errors/follow-relationship-not-found.error.js';
 
 type ApiErrorCode =
   | 'INVALID_CREDENTIALS'
@@ -18,7 +21,10 @@ type ApiErrorCode =
   | 'UNAUTHENTICATED'
   | 'VALIDATION_ERROR'
   | 'INTERNAL_SERVER_ERROR'
-  | 'PROFILE_NOT_FOUND';
+  | 'PROFILE_NOT_FOUND'
+  | 'SELF_FOLLOW_NOT_ALLOWED'
+  | 'FOLLOW_RELATIONSHIP_ALREADY_EXISTS'
+  | 'FOLLOW_RELATIONSHIP_NOT_FOUND';
 
 interface ApiErrorResponse {
   error: {
@@ -104,6 +110,33 @@ export class HttpExceptionFilter implements ExceptionFilter {
       body = {
         error: {
           code: 'PROFILE_NOT_FOUND',
+          message: exception.message,
+          details: null,
+        },
+      };
+    } else if (exception instanceof InvalidSameUserError) {
+      status = 400;
+      body = {
+        error: {
+          code: 'SELF_FOLLOW_NOT_ALLOWED',
+          message: exception.message,
+          details: null,
+        },
+      };
+    } else if (exception instanceof DuplicateRelationshipError) {
+      status = 409;
+      body = {
+        error: {
+          code: 'FOLLOW_RELATIONSHIP_ALREADY_EXISTS',
+          message: exception.message,
+          details: null,
+        },
+      };
+    } else if (exception instanceof FollowRelationshipNotFoundError) {
+      status = 404;
+      body = {
+        error: {
+          code: 'FOLLOW_RELATIONSHIP_NOT_FOUND',
           message: exception.message,
           details: null,
         },

@@ -8,6 +8,9 @@ import {
 } from '@nestjs/common';
 import { EmailAlreadyRegisteredError } from '@users/domain/errors/email-already-registered.error.js';
 import { ProfileNotFoundError } from '@profiles/domain/errors/profile-not-found.error.js';
+import { DuplicateRelationshipError } from '@social/domain/errors/duplicate-relationship.error.js';
+import { FollowRelationshipNotFoundError } from '@social/domain/errors/follow-relationship-not-found.error.js';
+import { InvalidSameUserError } from '@social/domain/errors/same-user.error.js';
 import { HttpExceptionFilter } from './global-exception.filter.js';
 
 describe('HttpExceptionFilter', () => {
@@ -47,6 +50,24 @@ describe('HttpExceptionFilter', () => {
       statusCode: HttpStatus.NOT_FOUND,
       code: 'PROFILE_NOT_FOUND',
       message: 'Profile not found',
+    },
+    {
+      exception: new InvalidSameUserError(),
+      statusCode: HttpStatus.BAD_REQUEST,
+      code: 'SELF_FOLLOW_NOT_ALLOWED',
+      message: 'Users cannot follow themselves',
+    },
+    {
+      exception: new DuplicateRelationshipError('Follow relationship already exists.'),
+      statusCode: HttpStatus.CONFLICT,
+      code: 'FOLLOW_RELATIONSHIP_ALREADY_EXISTS',
+      message: 'Follow relationship already exists.',
+    },
+    {
+      exception: new FollowRelationshipNotFoundError(),
+      statusCode: HttpStatus.NOT_FOUND,
+      code: 'FOLLOW_RELATIONSHIP_NOT_FOUND',
+      message: 'Follow relationship not found.',
     },
   ])('maps $code to the uniform error envelope', ({ exception, statusCode, code, message }) => {
     const { host, status, json } = createHttpHost();

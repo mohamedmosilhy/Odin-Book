@@ -4,11 +4,12 @@ import { FindUserByEmailUseCase } from './application/use-cases/find-user-by-ema
 import { UsersController } from './presentation/controllers/users.controller.js';
 import { PrismaUserRepository } from './infrastructure/persistence/prisma-user.repository.js';
 import { USER_REPOSITORY } from './application/ports/user-repository.port.js';
-import { SharedModule } from '@shared/shared.module.js';
+
 import { PrismaExternalIdentityRepository } from './infrastructure/persistence/prisma-external-identity.repository.js';
 import { EXTERNAL_IDENTITY_PORT } from './application/ports/external-identity.port.js';
 import { ACCOUNT_PROVISIONING_PORT } from './application/ports/account-provisioning.port.js';
 import { PrismaAccountProvisioningRepository } from './infrastructure/persistence/prisma-account-provisioning.repository.js';
+import { InfrastructureModule } from '@shared/infrastructure.module.js';
 
 @Module({
   controllers: [UsersController],
@@ -19,7 +20,7 @@ import { PrismaAccountProvisioningRepository } from './infrastructure/persistenc
     { provide: EXTERNAL_IDENTITY_PORT, useClass: PrismaExternalIdentityRepository },
     { provide: ACCOUNT_PROVISIONING_PORT, useClass: PrismaAccountProvisioningRepository },
   ],
-  imports: [SharedModule],
+  imports: [InfrastructureModule],
   exports: [
     FindUserByEmailUseCase,
     FindUserByIdUseCase,
